@@ -1904,7 +1904,7 @@
 
         #apiSelect {
             position: absolute;
-            top: 36px;
+            top: 37px;
             padding: 4px 0;
             background: var(--chat-back);
             width: 100%;
@@ -2321,7 +2321,7 @@
                                 <div>
                                     <label for="preSetSystem" data-i18n-key="presetRole"></label>
                                     <select id="preSetSystem">
-                                        <option value="" data-i18n-key="default"></option>
+                                        <option value="default" data-i18n-key="default"></option>
                                         <option value="normal" data-i18n-key="assistant"></option>
                                         <option value="cat" data-i18n-key="cat"></option>
                                         <option value="emoji" data-i18n-key="emoji"></option>
@@ -2921,6 +2921,7 @@
                 "cat": "Cat girl",
                 "emoji": "Emoji",
                 "withImg": "Image",
+                "defaultText": "",
                 "assistantText": "You are a helpful assistant, answer as concisely as possible.",
                 "catText": "You are a cute cat girl, you must end every sentence with 'meow'",
                 "emojiText": "Your personality is very lively, there must be at least one emoji icon in every sentence",
@@ -3073,6 +3074,7 @@
                 "cat": "猫娘",
                 "emoji": "表情",
                 "withImg": "有图",
+                "defaultText": "",
                 "assistantText": "你是一个乐于助人的助手，尽量简明扼要地回答",
                 "catText": "你是一个可爱的猫娘，每句话结尾都要带个'喵'",
                 "emojiText": "你的性格很活泼，每句话中都要有至少一个emoji图标",
@@ -3318,6 +3320,7 @@
         const searchChatEle = document.getElementById("searchChat");
         const voiceRecEle = document.getElementById("voiceRecIcon");
         const voiceRecSetEle = document.getElementById("voiceRecSetting");
+        const preEle = document.getElementById("preSetSystem");
         let voiceType = 1; // 设置 0: 提问语音，1：回答语音
         let voiceRole = []; // 语音
         let voiceTestText; // 测试语音文本
@@ -4166,6 +4169,7 @@
         const API_URL = "v1/chat/completions";
         let loading = false;
         let presetRoleData = {
+            "default": translations[locale]["defaultText"],
             "normal": translations[locale]["assistantText"],
             "cat": translations[locale]["catText"],
             "emoji": translations[locale]["emojiText"],
@@ -4424,6 +4428,7 @@
             token.attrSet("onerror", "scrollToBottomLoad(this);this.removeAttribute('onload');this.removeAttribute('onerror')");
             return slf.renderToken(tokens, idx, options)
         }
+        let currentVoiceIdx;
         let editingIdx;
         let originText;
         const resumeSend = () => {
@@ -4896,6 +4901,8 @@
         };
         const addNewChat = () => {
             let chat = {name: translations[locale]["newChatName"], data: []};
+            if (presetRoleData.default) chat.data.unshift({role: "system", content: presetRoleData.default});
+            preEle.selectedIndex = 0;
             chatsData.push(chat);
             chatIdxs.push(chatsData.length - 1);
             updateChats();
@@ -5082,11 +5089,9 @@
             if (data[0] && data[0].role === "system") {
                 systemRole = data[0].content;
                 systemEle.value = systemRole;
-                localStorage.setItem("system", systemRole);
             } else {
-                systemRole = "";
+                systemRole = void 0;
                 systemEle.value = "";
-                localStorage.setItem("system", systemRole);
             }
             chatlog.innerHTML = "";
             if (systemRole ? data.length - 1 : data.length) {
@@ -5359,7 +5364,7 @@
                         if (val !== void 0) localStorage.setItem(key, val);
                         else localStorage.removeItem(key);
                     }
-                    initSetting(true);
+                    initSetting();
                     initVoiceVal();
                     speechServiceEle.dispatchEvent(new Event("change"));
                     initRecSetting();
@@ -5382,7 +5387,7 @@
                     let key = localSetKeys[i];
                     let val = localStorage.removeItem(key);
                 }
-                initSetting(true);
+                initSetting();
                 initVoiceVal();
                 speechServiceEle.dispatchEvent(new Event("change"));
                 initRecSetting();
@@ -5401,7 +5406,6 @@
             if (currentVoiceIdx !== void 0) currentVoiceIdx += plus;
             if (editingIdx !== void 0) editingIdx += plus;
         }
-
         const hotKeyVals = {};
         const ctrlHotKeyEv = (ev) => {
             if (ev.ctrlKey || ev.metaKey) {
@@ -5503,7 +5507,7 @@
         initHotKey();
         document.addEventListener("keydown", ctrlHotKeyEv);
         document.addEventListener("keydown", ctrlAltHotKeyEv);
-        const initSetting = (force = false) => {
+        const initSetting = () => {
             const modelEle = document.getElementById("preSetModel");
             let localModel = localStorage.getItem("modelVersion");
             modelVersion = modelEle.value = localModel || "gpt-3.5-turbo";
@@ -5624,20 +5628,13 @@
                 updateChats();
             }
             if (systemRole === void 0) {
-                if (localSystem) {
-                    systemRole = localSystem;
-                    systemEle.value = localSystem;
+                systemRole = systemEle.value = localSystem || presetRoleData.default || "";
+                if (systemRole) {
                     data.unshift({role: "system", content: systemRole});
                     processIdx(1);
                     updateChats();
-                } else {
-                    systemRole = systemEle.value;
                 }
-            } else if (force) {
-                systemRole = systemEle.value = localSystem || systemEle.getAttribute("value") || "";
-                systemEle.dispatchEvent(new Event("change"));
             }
-            const preEle = document.getElementById("preSetSystem");
             preEle.onchange = () => {
                 let val = preEle.value;
                 if (val && presetRoleData[val]) {
@@ -5917,7 +5914,6 @@
             return `wss://${azureRegion}.tts.speech.microsoft.com/cognitiveservices/websocket/v1?Authorization=bearer%20${azureToken}`
         }
         const edgeTTSURL = "wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4";
-        let currentVoiceIdx;
         const resetSpeakIcon = () => {
             if (currentVoiceIdx !== void 0) {
                 chatlog.children[systemRole ? currentVoiceIdx - 1 : currentVoiceIdx].classList.remove("showVoiceCls");
@@ -6752,7 +6748,6 @@
     <link crossorigin="anonymous" href="//cdn.staticfile.org/KaTeX/0.16.7/katex.min.css" rel="stylesheet">
     <link crossorigin="anonymous" href="//npm.elemecdn.com/markdown-it-texmath@1.0.0/css/texmath.css" rel="stylesheet">
     <script defer>
-        const preEle = document.getElementById("preSetSystem");
         let downRoleController = new AbortController();
         const loadPrompt = () => {
             downRoleController.abort();
