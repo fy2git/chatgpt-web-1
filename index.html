@@ -309,7 +309,7 @@
         }
 
         .messages::-webkit-scrollbar,
-        #chatlog .markdown-body>pre>code::-webkit-scrollbar,
+        #chatlog .markdown-body pre>code::-webkit-scrollbar,
         #setDialog::-webkit-scrollbar,
         .allList::-webkit-scrollbar,
         .sysDetail::-webkit-scrollbar,
@@ -319,7 +319,7 @@
         }
 
         .messages::-webkit-scrollbar-track,
-        #chatlog .markdown-body>pre>code::-webkit-scrollbar-track,
+        #chatlog .markdown-body pre>code::-webkit-scrollbar-track,
         #setDialog::-webkit-scrollbar-track,
         .allList::-webkit-scrollbar-track,
         .sysDetail::-webkit-scrollbar-track,
@@ -330,7 +330,7 @@
         }
 
         .messages::-webkit-scrollbar-corner,
-        #chatlog .markdown-body>pre>code::-webkit-scrollbar-corner,
+        #chatlog .markdown-body pre>code::-webkit-scrollbar-corner,
         #setDialog::-webkit-scrollbar-corner,
         .allList::-webkit-scrollbar-corner,
         .sysDetail::-webkit-scrollbar-corner,
@@ -339,7 +339,7 @@
         }
 
         .messages::-webkit-scrollbar-thumb,
-        #chatlog .markdown-body>pre>code::-webkit-scrollbar-thumb,
+        #chatlog .markdown-body pre>code::-webkit-scrollbar-thumb,
         #setDialog::-webkit-scrollbar-thumb,
         .allList::-webkit-scrollbar-thumb,
         .sysDetail::-webkit-scrollbar-thumb,
@@ -351,7 +351,7 @@
         }
 
         .messages::-webkit-scrollbar-thumb:hover,
-        #chatlog .markdown-body>pre>code::-webkit-scrollbar-thumb:hover,
+        #chatlog .markdown-body pre>code::-webkit-scrollbar-thumb:hover,
         #setDialog::-webkit-scrollbar-thumb:hover,
         .allList::-webkit-scrollbar-thumb:hover,
         .sysDetail::-webkit-scrollbar-thumb:hover,
@@ -427,15 +427,19 @@
             padding: 0 1px 0 2px;
         }
 
-        #chatlog .markdown-body>pre {
+        #chatlog .markdown-body pre {
             padding: 10px;
             position: relative;
             background: var(--code-color);
         }
 
-        #chatlog .markdown-body>pre>code {
+        #chatlog .markdown-body pre>code {
             overflow-x: auto;
             display: block;
+        }
+
+        #chatlog .markdown-body ul {
+            list-style-type: disc;
         }
 
         .m-mdic-copy-wrapper {
@@ -488,6 +492,12 @@
             outline: none;
             cursor: pointer;
             transition: color 250ms;
+        }
+
+        .m-mdic-copy-wrapper span.u-mdic-copy-code_lang::before,
+        .m-mdic-copy-wrapper div.u-mdic-copy-notify::before,
+        .m-mdic-copy-wrapper button.u-mdic-copy-btn::before {
+            content: attr(text);
         }
 
         .m-mdic-copy-wrapper button.u-mdic-copy-btn:hover {
@@ -3424,10 +3434,10 @@
                 ele.textContent = num + translations[locale]["chats"];
             });
             document.querySelectorAll(".u-mdic-copy-btn").forEach(ele => {
-                ele.textContent = translations[locale]["copyCode"];
+                ele.setAttribute("text", translations[locale]["copyCode"]);
             })
             document.querySelectorAll(".u-mdic-copy-notify").forEach(ele => {
-                ele.textContent = translations[locale]["copySuccess"];
+                ele.setAttribute("text", translations[locale]["copySuccess"]);
             })
             if (editingIdx !== void 0) {
                 document.querySelector("[data-i18n-key='send']").textContent = translations[locale]["update"];
@@ -4501,7 +4511,7 @@
                 return (res && res[1]) || "";
             },
             getFragment(str = "") {
-                return str ? `<span class="u-mdic-copy-code_lang">${str}</span>` : "";
+                return str ? `<span class="u-mdic-copy-code_lang" text="${str}"></span>` : "";
             },
         };
         const getCodeLangFragment = (oriStr = "") => {
@@ -4550,11 +4560,8 @@
             const tpls = [
                 '<div class="m-mdic-copy-wrapper">',
                 `${langFrag}`,
-                `<div class="u-mdic-copy-notify" style="display:none;">${successText}</div>`,
-                '<button ',
-                'class="u-mdic-copy-btn j-mdic-copy-btn" ',
-                `data-mdic-notify-delay="${successTextDelay}" `,
-                `onclick="copyClickCode(this)">${btnText}</button>`,
+                `<div class="u-mdic-copy-notify" style="display:none;" text="${successText}"></div>`,
+                `<button class="u-mdic-copy-btn j-mdic-copy-btn" text="${btnText}" data-mdic-notify-delay="${successTextDelay}" onclick="copyClickCode(this)"></button>`,
                 '</div>',
             ];
             return originResult.replace("</pre>", `${tpls.join("")}</pre>`);
@@ -6636,7 +6643,7 @@
             controllerId = setTimeout(() => {
                 notyf.error(translations[locale]["timeoutTip"]);
                 stopLoading();
-            }, 120000);
+            }, 200000);
             let isRefresh = refreshIdx !== void 0;
             if (isRefresh) {
                 currentResEle = chatlog.children[systemRole ? refreshIdx - 1 : refreshIdx];
